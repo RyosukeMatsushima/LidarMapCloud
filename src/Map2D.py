@@ -14,15 +14,36 @@ class Map2D:
         self.map = np.zeros((map_angle_resolution, pixels_XY, pixels_XY), dtype=float)
         self._origin_pixel = int((int(size / 2) + 1 / 2) * map_XY_resolution)
 
-        self.unit_distribution = np.zeros((pixels_XY, pixels_XY), dtype=float)
-        mark1 = int(size / 2) * map_XY_resolution
-        mark2 = mark1 + map_XY_resolution + 1
-        self.unit_distribution[mark1 : mark2, mark1 : mark2] = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
+        self.unit_distribution = self.sort_img_size(LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution), (pixels_XY, pixels_XY))
 
-    def set_data(self, robot_position, angle, distance):
+    def add_data(self, robot_position, angle, distance):
+
+        distribution = ndimage.zoom(ascent, [LidarSpec.DISTANCE_RESOLUTION(distance), LidarSpec.ANGLE_RESOLUTION * distance])
+
         return
+    
+    def sort_img_size(self, img, shape):
+        
+        p0 = int((img.shape[0] - shape[0]) / 2)
+        p0 = 0 if p0 <= 0 else p0
+        len0 = img.shape[0] if p0 <= 0 else shape[0]
 
+        p1 = int((img.shape[1] - shape[1]) / 2)
+        p1 = 0 if p1 <= 0 else p1
+        len1 = img.shape[1] if p1 <= 0 else shape[1]
 
+        img = img[p0: p0 + len0, p1: p1 + len0]
+        
+        return np.pad(img, (self.pad_tuple(img.shape[0], shape[0]), self.pad_tuple(img.shape[1], shape[1])), constant_values=0)
+    
+    def pad_tuple(self, now_len, to_len):
+        diff = to_len - now_len
+        if diff <= 0:
+            return (0, 0)
+
+        p0 = int(diff / 2)
+        p1 = diff - p0
+        return (p0, p1)
 
     # def __init__(self, axisX: Axis, axisY: Axis, axisTheta: Axis, axisDistance: Axis):
     #     self.axisX = axisX
