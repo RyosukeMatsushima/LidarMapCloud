@@ -1,4 +1,7 @@
 import numpy as np
+import math
+from scipy import ndimage
+import cv2
 
 from .Axis import Axis
 from . import LidarSpec
@@ -8,42 +11,70 @@ class Map2D:
     # size[m]
     def __init__(self, map_XY_resolution: int, map_angle_resolution: int, size: int):
 
-        pixels_XY = map_XY_resolution * size
+        self.XY_resolution = map_XY_resolution
+        self.angle_resolution = map_angle_resolution
+
+        self.pixels_len = map_XY_resolution * size
 
         # map(angle, X, Y)
-        self.map = np.zeros((map_angle_resolution, pixels_XY, pixels_XY), dtype=float)
-        self._origin_pixel = int((int(size / 2) + 1 / 2) * map_XY_resolution)
+        self.data = np.zeros((map_angle_resolution, self.pixels_len, self.pixels_len), dtype=float)
+        self._origin_pixel = int(self.pixels_len / 2)
 
-        self.unit_distribution = self.sort_img_size(LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution), (pixels_XY, pixels_XY))
+        self.unit_distribution = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
 
+    # robot_position: [X, Y]
+    # angele[rad]
+    # distance[m]
     def add_data(self, robot_position, angle, distance):
 
-        distribution = ndimage.zoom(ascent, [LidarSpec.DISTANCE_RESOLUTION(distance), LidarSpec.ANGLE_RESOLUTION * distance])
+        weight = 1
+        distance_size = int(LidarSpec.DISTANCE_RESOLUTION(distance) * self.XY_resolution)
+        angle_size = int(LidarSpec.ANGLE_RESOLUTION * distance * self.XY_resolution)
 
-        return
-    
-    def sort_img_size(self, img, shape):
-        
-        p0 = int((img.shape[0] - shape[0]) / 2)
-        p0 = 0 if p0 <= 0 else p0
-        len0 = img.shape[0] if p0 <= 0 else shape[0]
+        distance_size, angle_size = [4 if value < 4 else value for value in [distance_size, angle_size]]
 
-        p1 = int((img.shape[1] - shape[1]) / 2)
-        p1 = 0 if p1 <= 0 else p1
-        len1 = img.shape[1] if p1 <= 0 else shape[1]
+        distribution = cv2.resize(self.unit_distribution * weight, (distance_size, angle_size))
+        distribution = ndimage.rotate(distribution, math.degrees(angle), reshape=True)
 
-        img = img[p0: p0 + len0, p1: p1 + len0]
-        
-        return np.pad(img, (self.pad_tuple(img.shape[0], shape[0]), self.pad_tuple(img.shape[1], shape[1])), constant_values=0)
-    
-    def pad_tuple(self, now_len, to_len):
-        diff = to_len - now_len
-        if diff <= 0:
-            return (0, 0)
+        center_distribution = robot_position
+        center_distribution[0] += np.cos(angle) * distance
+        center_distribution[1] += np.sin(angle) * distance
 
-        p0 = int(diff / 2)
-        p1 = diff - p0
+        self.data[self.angle_to_pix(angle)] += self.adjust_img_to_map(distribution, self.pos_to_pix(center_distribution))
+
+        return distribution
+
+    def adjust_img_to_map(self, img, center_pix):
+
+        #TODO: check img size
+        tuples = []
+        for i in range(len(img.shape)):
+            try:
+                tuples += [self.pad_tuple(img.shape[i], self.pixels_len, center_pix[i])]
+            except ArithmeticError:
+                print("Oops! Img is out of map")
+
+        return np.pad(img, tuples, constant_values=0)
+
+    def pad_tuple(self, now_len: int, to_len: int, center: int):
+        p0 = center - int(now_len / 2)
+        p1 = to_len - (p0 + now_len)
+
+        if p0 < 0 or p1 > to_len:
+            raise ArithmeticError("out of range")
+
         return (p0, p1)
+    
+    # pos: [X, Y]
+    def pos_to_pix(self, pos):
+        pix = []
+        for i in range(len(pos)):
+            pix += [int(pos[i] / self.XY_resolution) + self._origin_pixel]
+        
+        return pix
+
+    def angle_to_pix(self, angle):
+        return int(angle / self.angle_resolution)
 
     # def __init__(self, axisX: Axis, axisY: Axis, axisTheta: Axis, axisDistance: Axis):
     #     self.axisX = axisX
