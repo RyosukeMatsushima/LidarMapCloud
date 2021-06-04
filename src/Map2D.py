@@ -10,10 +10,12 @@ class Map2D:
     # map resolution means of pixels in 1[m] or 2pi[rad]
     # north angle is 0[rad] and 0 <= angle < 2pi
     # size[m]
+    # XY is north east coodinate system
     def __init__(self, map_XY_resolution: int, map_angle_resolution: int, size: int):
 
         self.XY_resolution = map_XY_resolution
         self.angle_resolution = map_angle_resolution
+        self.size = size
 
         self.pixels_len = map_XY_resolution * size
 
@@ -65,13 +67,12 @@ class Map2D:
             raise ArithmeticError("out of range")
 
         return (p0, p1)
-    
+
     # pos: [X, Y]
     def pos_to_pix(self, pos):
         pix = []
         for i in range(len(pos)):
-            pix += [int(pos[i] / self.XY_resolution) + self._origin_pixel]
-        
+            pix += [int((pos[i] + self.size / 2) * self.XY_resolution)]
         return pix
 
     def angle_to_pix(self, angle):
