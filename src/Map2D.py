@@ -24,6 +24,7 @@ class Map2D:
         self._origin_pixel = int(self.pixels_len / 2)
 
         self.unit_distribution = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
+        self.directivity_weight = LidarSpec.DIRECTIVITY_WEIGHT(self.angle_resolution)
 
     # robot_position: [X, Y]
     # angele[rad]
@@ -43,7 +44,12 @@ class Map2D:
         center_distribution[0] += np.cos(angle) * distance
         center_distribution[1] += np.sin(angle) * distance
 
-        self.data[self.angle_to_pix(angle)] += self.adjust_img_to_map(distribution, self.pos_to_pix(center_distribution))
+        directivity_weight = np.roll(self.directivity_weight, self.angle_to_pix(angle))
+
+        #TODO: refactor
+        new_distribution = self.adjust_img_to_map(distribution, self.pos_to_pix(center_distribution))
+        for i, weight in enumerate(directivity_weight):
+            self.data[i] += new_distribution * weight
 
         return distribution
 
