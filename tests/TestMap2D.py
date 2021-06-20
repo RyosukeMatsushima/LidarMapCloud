@@ -8,7 +8,9 @@ from src.Axis import Axis
 class Map2DTest(unittest.TestCase):
     def setUp(self):
         print("setUp")
-        self.map2D = Map2D(100, 500, 3)
+        self.xy_resolution = 100
+        self.angle_resolution = 500
+        self.map2D = Map2D(self.xy_resolution, self.angle_resolution, 3)
 
     def test_init(self):
         print("test_init")
@@ -23,18 +25,22 @@ class Map2DTest(unittest.TestCase):
     def test_add_data(self):
         print("test_add_data")
 
-        for i in range(100):
-            angle = 0
+        for i in range(10):
+            angle = np.pi / 2
             self.map2D.add_data([0, 0], 0, 1)
+            self.map2D.add_data([0, 0], angle, 1)
 
+        for i, data in enumerate(self.map2D.data):
             if i % 10 == 0:
-                fig = plt.figure(figsize=(10, 3))
-                ax1, ax2 = fig.subplots(1, 2)
+                angle = i / self.angle_resolution * 2 * np.pi
 
-                ax1.imshow(self.map2D.data[self.map2D.angle_to_pix(angle)], cmap='gray')
-                d = self.map2D.add_data([0, 0], 2, 1)
-                im = ax2.imshow(d, cmap='gray')
+                fig = plt.figure(figsize=(10, 3))
+                ax = fig.subplots(1, 1)
+
+                im = ax.imshow(data, cmap='gray')
                 fig.colorbar(im)
+                ax.set_axis_off()
+                plt.title("{}".format(angle / np.pi * 180))
                 plt.show()
 
 if __name__ == "__main__":
