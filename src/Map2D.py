@@ -23,8 +23,26 @@ class Map2D:
         self.data = np.zeros((map_angle_resolution, self.pixels_len, self.pixels_len), dtype=float)
         self._origin_pixel = int(self.pixels_len / 2)
 
-        self.unit_distribution = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
-        self.directivity_weight = LidarSpec.DIRECTIVITY_WEIGHT(self.angle_resolution)
+        self._unit_distribution = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
+        self._directivity_weight = LidarSpec.DIRECTIVITY_WEIGHT(self.angle_resolution)
+
+        self._filter = self.get_filter()
+
+    def get_filter(self):
+        lidar_range_pix = int(LidarSpec.RANGE * self.XY_resolution)
+        filter_size = lidar_range_pix * 2
+        poler_filter = np.zeros((self.angle_resolution, lidar_range_pix), dtype=float)
+        map_filter = np.zeros((self.angle_resolution, filter_size, filter_size))
+
+        flags = cv2.INTER_CUBIC + cv2.WARP_FILL_OUTLIERS + cv2.WARP_POLAR_LINEAR + cv2.WARP_INVERSE_MAP
+
+        for angle_pix in range(0, self.angle_resolution):
+            poler_filter.fill(0.0)
+            poler_filter[angle_pix,:] = 1.0
+
+            map_filter[angle_pix] = cv2.warpPolar(poler_filter, (filter_size, filter_size), (lidar_range_pix, lidar_range_pix), lidar_range_pix, flags)
+
+        return map_filter
 
     # robot_position: [X, Y]
     # angele[rad]
@@ -37,19 +55,19 @@ class Map2D:
 
         distance_size, angle_size = [4 if value < 4 else value for value in [distance_size, angle_size]]
 
-        distribution = cv2.resize(self.unit_distribution * weight, (distance_size, angle_size))
+        distribution = cv2.resize(self._unit_distribution * weight, (distance_size, angle_size))
         distribution = ndimage.rotate(distribution, math.degrees(angle), reshape=True)
 
         center_distribution = robot_position
         center_distribution[0] += np.cos(angle) * distance
         center_distribution[1] += np.sin(angle) * distance
 
-        directivity_weight = np.roll(self.directivity_weight, self.angle_to_pix(angle))
+        directivity_weight = np.roll(self._directivity_weight, self.angle_to_pix(angle))
 
         #TODO: refactor
-        new_distribution = self.adjust_img_to_map(distribution, self.pos_to_pix(center_distribution))
+        ajusted_distribution = self.adjust_img_to_map(distribution, self.pos_to_pix(center_distribution))
         for i, weight in enumerate(directivity_weight):
-            self.data[i] += new_distribution * weight
+            self.data[i] += ajusted_distribution * weight
 
         return distribution
 

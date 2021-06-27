@@ -18,7 +18,7 @@ class Map2DTest(unittest.TestCase):
         fig = plt.figure(figsize=(10, 3))
         ax = fig.subplots(1, 1)
 
-        ax.imshow(self.map2D.unit_distribution, cmap='gray')
+        ax.imshow(self.map2D._unit_distribution, cmap='gray')
         ax.set_axis_off()
         plt.show()
 
@@ -35,11 +35,13 @@ class Map2DTest(unittest.TestCase):
                 angle = i / self.angle_resolution * 2 * np.pi
 
                 fig = plt.figure(figsize=(10, 3))
-                ax = fig.subplots(1, 1)
+                ax1, ax2 = fig.subplots(1, 2)
 
-                im = ax.imshow(data, cmap='gray')
+                im = ax1.imshow(data, cmap='gray')
                 fig.colorbar(im)
-                ax.set_axis_off()
+                ax1.set_axis_off()
+
+                ax2.imshow(self.map2D._filter[i], cmap='gray')
                 plt.title("{}".format(angle / np.pi * 180))
                 plt.show()
 

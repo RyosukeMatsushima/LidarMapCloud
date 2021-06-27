@@ -59,11 +59,11 @@ print(img)
 
 
 # 逆変換(リニア)
-test_img = np.zeros(img.shape, dtype=float)
+test_img = np.zeros((100, 1000), dtype=float)
 
-for i in range(test_img.shape[0]):
-    test_img[i,:] = i * 2
-
+# for i in range(test_img.shape[0]):
+#     test_img[i,:] = i * 12
+test_img[40,:] = 1
 test_img = test_img.astype(np.uint8)
 
 img = test_img
@@ -73,6 +73,11 @@ linear_polar_inverse_image = cv2.warpPolar(test_img, (512, 512), (256, 256), 256
 
 fig = plt.figure(figsize=(10, 3))
 ax1, ax2, ax3 = fig.subplots(1, 3)
+
+print("test_img.shape")
+print(test_img.shape)
+print("linear_polar_inverse_image.shape")
+print(linear_polar_inverse_image.shape)
 
 ax1.imshow(img, cmap='gray')
 ax1.set_axis_off()
