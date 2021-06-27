@@ -18,8 +18,9 @@ class Map2DTest(unittest.TestCase):
         fig = plt.figure(figsize=(10, 3))
         ax = fig.subplots(1, 1)
 
-        ax.imshow(self.map2D._unit_distribution, cmap='gray')
+        im = ax.imshow(np.sum(self.map2D._filter, axis=0), cmap='gray')
         ax.set_axis_off()
+        fig.colorbar(im)
         plt.show()
 
     def test_add_data(self):
@@ -27,23 +28,34 @@ class Map2DTest(unittest.TestCase):
 
         for i in range(10):
             angle = np.pi / 2
-            self.map2D.add_data([0, 0], 0, 1)
-            self.map2D.add_data([0, 0], angle, 1)
+            self.map2D.add_data([0, 0], 0, 0.5)
+            self.map2D.add_data([0, 0], angle, 0.5)
 
-        for i, data in enumerate(self.map2D.data):
-            if i % 10 == 0:
-                angle = i / self.angle_resolution * 2 * np.pi
+        likelihood, ad_filter = self.map2D.get_Likelihood_function([0, 0])
 
-                fig = plt.figure(figsize=(10, 3))
-                ax1, ax2 = fig.subplots(1, 2)
+#        for i, data in enumerate(self.map2D.data):
+#            if i % 10 == 0:
+#                angle = i / self.angle_resolution * 2 * np.pi
+#
+#                fig = plt.figure(figsize=(10, 3))
+#                ax1, ax2 = fig.subplots(1, 2)
+#
+#                im = ax1.imshow(data, cmap='gray')
+#                fig.colorbar(im)
+#                ax1.set_axis_off()
+#
+#                ax2.imshow(self.map2D._filter[i], cmap='gray')
+#                plt.title("{}".format(angle / np.pi * 180))
+#                plt.show()
 
-                im = ax1.imshow(data, cmap='gray')
-                fig.colorbar(im)
-                ax1.set_axis_off()
+        fig = plt.figure(figsize=(10, 3))
+        ax = fig.subplots(1, 1)
 
-                ax2.imshow(self.map2D._filter[i], cmap='gray')
-                plt.title("{}".format(angle / np.pi * 180))
-                plt.show()
+        print(likelihood)
+
+        im = ax.imshow(likelihood, cmap='gray')
+        fig.colorbar(im)
+        plt.show()
 
 if __name__ == "__main__":
     unittest.main()

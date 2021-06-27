@@ -3,7 +3,7 @@ from scipy.stats import multivariate_normal
 
 ANGLE_RESOLUTION = 0.01 # [rad]
 
-RANGE = 4 # [m]
+RANGE = 1 # [m]
 
 def DISTANCE_RESOLUTION(distance):
     return distance * 0.01

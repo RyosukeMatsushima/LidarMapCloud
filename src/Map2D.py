@@ -26,7 +26,7 @@ class Map2D:
         self._unit_distribution = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
         self._directivity_weight = LidarSpec.DIRECTIVITY_WEIGHT(self.angle_resolution)
 
-        self._filter = self.get_filter()
+        self._filter, self._filter_size = self.get_filter()
 
     def get_filter(self):
         lidar_range_pix = int(LidarSpec.RANGE * self.XY_resolution)
@@ -42,7 +42,7 @@ class Map2D:
 
             map_filter[angle_pix] = cv2.warpPolar(poler_filter, (filter_size, filter_size), (lidar_range_pix, lidar_range_pix), lidar_range_pix, flags)
 
-        return map_filter
+        return map_filter, filter_size
 
     # robot_position: [X, Y]
     # angele[rad]
@@ -71,6 +71,22 @@ class Map2D:
 
         return distribution
 
+    def get_Likelihood_function(self, robot_position):
+        tuples = [ (0, 0) ]
+
+        for robot_pix in self.pos_to_pix(robot_position):
+            try:
+                tuples += [ self.pad_tuple(self._filter_size, self.pixels_len, robot_pix) ]
+            except ArithmeticError:
+                print("Oops! Img is out of map")
+
+        print(tuples)
+        ajusted_filter = np.pad( self._filter, tuples, constant_values=0 )
+        print(ajusted_filter.shape)
+        likelihood_poler = np.sum( self.data * ajusted_filter, axis=0 )
+
+        return likelihood_poler, ajusted_filter
+
     def adjust_img_to_map(self, img, center_pix):
 
         #TODO: check img size
@@ -95,6 +111,7 @@ class Map2D:
     # pos: [X, Y]
     def pos_to_pix(self, pos):
         pix = []
+        #TODO: more shorter
         for i in range(len(pos)):
             pix += [int((pos[i] + self.size / 2) * self.XY_resolution)]
         return pix
