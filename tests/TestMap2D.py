@@ -27,26 +27,28 @@ class Map2DTest(unittest.TestCase):
         print("test_add_data")
 
         for i in range(10):
-            angle = np.pi / 2
+            print(i)
+            angle = np.pi / 3
             self.map2D.add_data([0, 0], 0, 0.5)
             self.map2D.add_data([0, 0], angle, 0.5)
 
-        likelihood, ad_filter = self.map2D.get_Likelihood_function([0, 0])
+        for i, data in enumerate(self.map2D.data):
+            if i % 40 == 0:
+                angle = i / self.angle_resolution * 2 * np.pi
 
-#        for i, data in enumerate(self.map2D.data):
-#            if i % 10 == 0:
-#                angle = i / self.angle_resolution * 2 * np.pi
-#
-#                fig = plt.figure(figsize=(10, 3))
-#                ax1, ax2 = fig.subplots(1, 2)
-#
-#                im = ax1.imshow(data, cmap='gray')
-#                fig.colorbar(im)
-#                ax1.set_axis_off()
-#
-#                ax2.imshow(self.map2D._filter[i], cmap='gray')
-#                plt.title("{}".format(angle / np.pi * 180))
-#                plt.show()
+                fig = plt.figure(figsize=(10, 3))
+                ax1, ax2 = fig.subplots(1, 2)
+
+                im = ax1.imshow(data, cmap='gray')
+                fig.colorbar(im)
+                ax1.set_axis_off()
+
+                ax2.imshow(self.map2D._filter[i], cmap='gray')
+                plt.title("{}".format(angle / np.pi * 180))
+                plt.show()
+
+        print('likelihood, ad_filter = self.map2D.get_Likelihood_function([0, 0])')
+        likelihood, ad_filter = self.map2D.get_Likelihood_function([0, 0])
 
         fig = plt.figure(figsize=(10, 3))
         ax = fig.subplots(1, 1)

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import multivariate_normal
 
-ANGLE_RESOLUTION = 0.01 # [rad]
+ANGLE_RESOLUTION = 0.2 # [rad]
 
 RANGE = 1 # [m]
 

@@ -55,7 +55,7 @@ class Map2D:
 
         distance_size, angle_size = [4 if value < 4 else value for value in [distance_size, angle_size]]
 
-        distribution = cv2.resize(self._unit_distribution * weight, (distance_size, angle_size))
+        distribution = cv2.resize(self._unit_distribution * weight, (angle_size, distance_size))
         distribution = ndimage.rotate(distribution, math.degrees(angle), reshape=True)
 
         center_distribution = robot_position
@@ -77,8 +77,8 @@ class Map2D:
         for robot_pix in self.pos_to_pix(robot_position):
             try:
                 tuples += [ self.pad_tuple(self._filter_size, self.pixels_len, robot_pix) ]
-            except ArithmeticError:
-                print("Oops! Img is out of map")
+            except ArithmeticError as error:
+                print(error)
 
         print(tuples)
         ajusted_filter = np.pad( self._filter, tuples, constant_values=0 )
@@ -104,7 +104,7 @@ class Map2D:
         p1 = to_len - (p0 + now_len)
 
         if p0 < 0 or p1 > to_len:
-            raise ArithmeticError("out of range")
+            raise ArithmeticError("out of range. Check p0: {} < 0 and p1: {} > to_len: {}".format(p0, p1, to_len))
 
         return (p0, p1)
 
