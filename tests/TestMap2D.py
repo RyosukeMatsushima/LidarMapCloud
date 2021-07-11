@@ -33,7 +33,7 @@ class Map2DTest(unittest.TestCase):
             self.map2D.add_data([0, 0], angle, 0.5)
 
         for i, data in enumerate(self.map2D.data):
-            if i % 40 == 0:
+            if i % 100 == 0:
                 angle = i / self.angle_resolution * 2 * np.pi
 
                 fig = plt.figure(figsize=(10, 3))
@@ -48,15 +48,17 @@ class Map2DTest(unittest.TestCase):
                 plt.show()
 
         print('likelihood, ad_filter = self.map2D.get_Likelihood_function([0, 0])')
-        likelihood, ad_filter = self.map2D.get_Likelihood_function([0, 0])
+        likelihood, likelihood_polor, ad_filter = self.map2D.get_Likelihood_function([0, 0])
 
         fig = plt.figure(figsize=(10, 3))
-        ax = fig.subplots(1, 1)
+        ax1, ax2 = fig.subplots(1, 2)
 
         print(likelihood)
 
-        im = ax.imshow(likelihood, cmap='gray')
+        im = ax1.imshow(likelihood, cmap='gray')
         fig.colorbar(im)
+
+        ax2.imshow(likelihood_polor, cmap='gray')
         plt.show()
 
 if __name__ == "__main__":

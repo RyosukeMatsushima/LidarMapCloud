@@ -85,7 +85,10 @@ class Map2D:
         print(ajusted_filter.shape)
         likelihood_poler = np.sum( self.data * ajusted_filter, axis=0 )
 
-        return likelihood_poler, ajusted_filter
+        flags = cv2.INTER_CUBIC + cv2.WARP_FILL_OUTLIERS + cv2.WARP_POLAR_LINEAR + cv2.WARP_INVERSE_MAP
+        likelihood = cv2.warpPolar(likelihood_poler, (self.angle_resolution, self.pixels_len), (self._origin_pixel, self._origin_pixel), self.pixels_len, flags)
+
+        return likelihood, likelihood_poler, ajusted_filter
 
     def adjust_img_to_map(self, img, center_pix):
 
