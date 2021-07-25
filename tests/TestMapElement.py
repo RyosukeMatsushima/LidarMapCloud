@@ -46,7 +46,6 @@ class MapElementTestCase(unittest.TestCase):
         self._show_img(self.mapElement1_2.data)
         self._show_img(self.mapElement1_3.data)
 
-
     def _show_img(self, img):
         fig = plt.figure(figsize=(10, 3))
         ax = fig.subplots(1, 1)

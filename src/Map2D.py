@@ -3,8 +3,14 @@ import math
 from scipy import ndimage
 import cv2
 
-from .Axis import Axis
+from .MapElement import MapElement
 from . import LidarSpec
+
+class LidarData:
+    def __init__(self, position, angle, distance):
+        self.position = position
+        self.angle = angle
+        self.distance = distance
 
 class Map2D:
     # map resolution means of pixels in 1[m] or 2pi[rad]
@@ -17,59 +23,36 @@ class Map2D:
         self.angle_resolution = map_angle_resolution
         self.size = size
 
-        self.pixels_len = map_XY_resolution * size
-
-        # map(angle, X, Y)
-        self.data = np.zeros((map_angle_resolution, self.pixels_len, self.pixels_len), dtype=float)
-        self._origin_pixel = int(self.pixels_len / 2)
+        # map data as list of MapElement
+        self.data = [ MapElement(map_XY_resolution, size, angle) for angle in range(map_angle_resolution) ]
+        self.lider_data = []    # [LidarDistance1, ...]
 
         self._unit_distribution = LidarSpec.UNIT_DISTRIBUTION(map_XY_resolution)
         self._directivity_weight = LidarSpec.DIRECTIVITY_WEIGHT(self.angle_resolution)
-
-        self._filter, self._filter_size = self.get_filter()
-
-    def get_filter(self):
-        lidar_range_pix = int(LidarSpec.RANGE * self.XY_resolution)
-        filter_size = lidar_range_pix * 2
-        poler_filter = np.zeros((self.angle_resolution, lidar_range_pix), dtype=float)
-        map_filter = np.zeros((self.angle_resolution, filter_size, filter_size))
-
-        flags = cv2.INTER_CUBIC + cv2.WARP_FILL_OUTLIERS + cv2.WARP_POLAR_LINEAR + cv2.WARP_INVERSE_MAP
-
-        for angle_pix in range(0, self.angle_resolution):
-            poler_filter.fill(0.0)
-            poler_filter[angle_pix,:] = 1.0
-
-            map_filter[angle_pix] = cv2.warpPolar(poler_filter, (filter_size, filter_size), (lidar_range_pix, lidar_range_pix), lidar_range_pix, flags)
-
-        return map_filter, filter_size
 
     # robot_position: [X, Y]
     # angele[rad]
     # distance[m]
     def add_data(self, robot_position, angle, distance):
+        self.lider_data += [LidarData(position, angle, distance)]
 
-        weight = 1
+    def update_map(self):
         distance_size = int(LidarSpec.DISTANCE_RESOLUTION(distance) * self.XY_resolution)
         angle_size = int(LidarSpec.ANGLE_RESOLUTION * distance * self.XY_resolution)
 
         distance_size, angle_size = [4 if value < 4 else value for value in [distance_size, angle_size]]
 
-        distribution = cv2.resize(self._unit_distribution * weight, (angle_size, distance_size))
-        distribution = ndimage.rotate(distribution, math.degrees(angle), reshape=True)
-
-        center_distribution = robot_position
-        center_distribution[0] += np.cos(angle) * distance
-        center_distribution[1] += np.sin(angle) * distance
+        distribution = cv2.resize(self._unit_distribution, (angle_size, distance_size))
 
         directivity_weight = np.roll(self._directivity_weight, self.angle_to_pix(angle))
 
-        #TODO: refactor
-        ajusted_distribution = self.adjust_img_to_map(distribution, self.pos_to_pix(center_distribution))
-        for i, weight in enumerate(directivity_weight):
-            self.data[i] += ajusted_distribution * weight
+        for i, element in enumerate(self.data):
+            weight = directivity_weight[i]
+            [ element.update_map(distribution * weight, ) for data in self.lider_data ]
 
-        return distribution
+        for data in self.lider_data:
+            [ element.update_map(distribution, data.position, data.angle) for element in self.data ]
+
 
     def get_Likelihood_function(self, robot_position):
         tuples = [ (0, 0) ]
